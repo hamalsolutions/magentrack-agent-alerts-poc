@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Magentrack Agent Alerts POC
+  Agentic chatbot processing RDS alerts using AWS Bedrock and WhatsApp.
+
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 512
+    Runtime: python3.11
+    Architectures:
+      - x86_64
+
+Resources:
+  AlertProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../src/
+      Handler: handlers.alert_processor.lambda_handler
+      Environment:
+        Variables:
+          DB_HOST: !Ref DbHost
+          DB_NAME: !Ref DbName
+          DB_USER: !Ref DbUser
+          DB_PASSWORD: !Ref DbPassword
+          WHATSAPP_API_TOKEN: !Ref WhatsAppToken
+          WHATSAPP_PHONE_ID: !Ref WhatsAppPhoneId
+          S3_BUCKET_NAME: !Ref S3BucketName
+          BEDROCK_MODEL_ID: "anthropic.claude-3-sonnet-20240229-v1:0"
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref S3BucketName
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - rds-data:ExecuteStatement
+                - rds-data:BatchExecuteStatement
+              Resource: "*"
+      Events:
+        PollingSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: "rate(1 minute)"
+            Name: AlertPollingSchedule
+            Description: Polls for new PENDING alerts every minute
+            Enabled: true
+
+Parameters:
+  DbHost:
+    Type: String
+  DbName:
+    Type: String
+  DbUser:
+    Type: String
+  DbPassword:
+    Type: String
+    NoEcho: true
+  WhatsAppToken:
+    Type: String
+    NoEcho: true
+  WhatsAppPhoneId:
+    Type: String
+  S3BucketName:
+    Type: String
