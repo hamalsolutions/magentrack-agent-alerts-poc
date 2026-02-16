@@ -1,0 +1,38 @@
+{
+  "Records": [
+    {
+      "eventID": "1",
+      "eventName": "INSERT",
+      "eventVersion": "1.0",
+      "eventSource": "aws:dynamodb",
+      "awsRegion": "us-east-1",
+      "dynamodb": {
+        "Keys": {
+          "message_id": {
+            "S": "msg-12345"
+          }
+        },
+        "NewImage": {
+          "message_id": {
+            "S": "msg-12345"
+          },
+          "phone_number": {
+            "S": "+1234567890"
+          },
+          "message": {
+            "S": "Hello, I need help with my appointment"
+          },
+          "type": {
+            "S": "INCOMING"
+          },
+          "timestamp": {
+            "S": "2023-10-26T10:00:00Z"
+          }
+        },
+        "SequenceNumber": "111",
+        "SizeBytes": 26,
+        "StreamViewType": "NEW_IMAGE"
+      }
+    }
+  ]
+}

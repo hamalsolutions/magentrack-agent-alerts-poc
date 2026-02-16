@@ -1,0 +1,19 @@
+{
+  "body": "{\"message\": \"Hello, I need help with my appointment\", \"phone_number\": \"+1234567890\"}",
+  "resource": "/webhook",
+  "path": "/webhook",
+  "httpMethod": "POST",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "stageVariables": null,
+  "requestContext": {
+    "requestId": "c6af9ac6-7b61-11e6-9a41-93e8deadbeef",
+    "identity": {
+      "sourceIp": "127.0.0.1"
+    }
+  },
+  "isBase64Encoded": false
+}
