@@ -26,38 +26,21 @@ def lambda_handler(event, context):
     user_message = event.get('message')
 
     try:
-        # Initialize adapters
         s3 = S3Adapter()
         agent = LLMAgent()
         
-        # Fetch guidance
         guidance = s3.get_guidance_document()
         
-        # Prepare context for LLM (reusing logic but adapting to new stricture)
-        # The original code expected an 'alert' dict. We have a direct message.
-        # We might need to adapt LLMAgent or mock the alert structure if we want to reuse it strictly.
-        # Let's adapt the usage here.
-        
-        # Constructing a pseudo-alert to fit existing LLM Agent signature if needed, 
-        # OR better, we should probably update LLMAgent to be more generic. 
-        # For now, let's wrap it to avoid changing core logic if possible, 
-        # or just pass the message as "value" or similar.
-        
-        # However, the prompt says "chatbot that answers to requests". 
-        # The existing LLMAgent expects an alert dict. 
-        # Let's create a dict that represents the user input.
         context_data = {
-            'patient_name': 'Unknown', # We don't have name in this flow yet
+            'patient_name': 'Unknown',
             'alert_type': 'User Query',
             'value': user_message,
             'timestamp': datetime.utcnow().isoformat(),
             'phone_number': phone_number
         }
         
-        # Generate response
         response_text = agent.generate_response(context_data, guidance)
         
-        # Store response in DynamoDB
         table = dynamodb.Table(TABLE_NAME)
         
         response_item = {

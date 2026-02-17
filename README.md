@@ -91,3 +91,98 @@ sam local invoke GenerateResponseFunction -e events/generate_event.json
 ```
 
 **Note**: For `GenerateResponseFunction`, ensure you have valid AWS credentials configured in your environment or passed to the container, as it interacts with real AWS services (Bedrock, S3).
+
+# API Integration Walkthrough
+
+This guide explains how to make authenticated requests to your production API Gateway endpoint.
+
+## Prerequisites
+
+To make a request, you need two pieces of information:
+
+1.  **API Endpoint URL**: The URL of your deployed API.
+    - Current: `https://zpfhwm1xji.execute-api.us-east-1.amazonaws.com/Prod/webhook`
+2.  **API Key**: The secret key required to access the endpoint.
+    - Current ID: `o55rk988tk`
+    - Value: _(Retrieve this securely via AWS Console or CLI)_
+
+## Authentication Mechanism
+
+The API uses **API Key** authentication. You must include the API Key in the HTTP **Header** of your request.
+
+- **Header Name:** `x-api-key`
+- **Header Value:** `YOUR_API_KEY_VALUE`
+
+## Request Examples
+
+### 1. cURL (Command Line)
+
+```bash
+curl -X POST https://zpfhwm1xji.execute-api.us-east-1.amazonaws.com/Prod/webhook \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_API_KEY_VALUE" \
+  -d '{"message": "Hello from production", "phone_number": "+1234567890"}'
+```
+
+### 2. Python (using `requests`)
+
+```python
+import requests
+import json
+
+url = "https://zpfhwm1xji.execute-api.us-east-1.amazonaws.com/Prod/webhook"
+api_key = "YOUR_API_KEY_VALUE"
+
+headers = {
+    "Content-Type": "application/json",
+    "x-api-key": api_key
+}
+
+payload = {
+    "message": "Hello from Python",
+    "phone_number": "+1234567890"
+}
+
+response = requests.post(url, json=payload, headers=headers)
+
+if response.status_code == 200:
+    print("Success:", response.json())
+else:
+    print("Error:", response.status_code, response.text)
+```
+
+### 3. JavaScript / Node.js (using `fetch`)
+
+```javascript
+const url =
+  "https://zpfhwm1xji.execute-api.us-east-1.amazonaws.com/Prod/webhook";
+const apiKey = "YOUR_API_KEY_VALUE";
+
+const payload = {
+  message: "Hello from Node.js",
+  phone_number: "+1234567890",
+};
+
+fetch(url, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-api-key": apiKey,
+  },
+  body: JSON.stringify(payload),
+})
+  .then((response) => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then((data) => console.log("Success:", data))
+  .catch((error) => console.error("Error:", error));
+```
+
+## Error Codes
+
+- **403 Forbidden**: Invalid API Key, missing API Key, or the header is incorrect.
+- **400 Bad Request**: Missing required fields in the request body (e.g., `message` or `phone_number`).
+- **500 Internal Server Error**: Something went wrong on the server side.
