@@ -53,3 +53,41 @@ Using AWS SAM:
 sam build
 sam deploy --guided
 ```
+
+## Local Testing
+
+You can use AWS SAM CLI to invoke functions locally using the provided event files in the `events/` folder.
+
+### 1. Input Handler (API Gateway)
+
+Simulate an API Gateway POST request:
+
+```bash
+sam local invoke InputFunction -e events/input_event.json
+```
+
+### 2. Stream Trigger (DynamoDB Stream)
+
+Simulate a DynamoDB Stream event (new item insertion):
+
+```bash
+sam local invoke StreamTriggerFunction -e events/stream_event.json
+```
+
+### 3. Process Message (Step Function Step 1)
+
+Test the first step of the State Machine:
+
+```bash
+sam local invoke ProcessMessageFunction -e events/process_event.json
+```
+
+### 4. Generate Response (Step Function Step 2)
+
+Test the response generation (requires AWS credentials for Bedrock/S3):
+
+```bash
+sam local invoke GenerateResponseFunction -e events/generate_event.json
+```
+
+**Note**: For `GenerateResponseFunction`, ensure you have valid AWS credentials configured in your environment or passed to the container, as it interacts with real AWS services (Bedrock, S3).
