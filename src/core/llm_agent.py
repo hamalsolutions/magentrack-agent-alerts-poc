@@ -64,3 +64,36 @@ class LLMAgent:
             logger.error(f"Bedrock invocation failed: {e}")
             # Fallback simple message if LLM fails
             return f"Hola {alert.get('patient_name')}, hemos detectado una alerta de {alert.get('alert_type')}. Por favor contáctenos."
+
+    def extract_id_from_message(self, message_text: str) -> str:
+        """
+        Extracts the personal identification number from the user's message.
+        """
+        prompt_context = f"""
+        You are an AI assistant. Your task is to extract the personal identification number (like national ID, passport, Cedula, etc.) from the user's message.
+        Message: "{message_text}"
+        
+        If you find an ID number, output exactly the number as plain text with no other words or formatting.
+        If you do not find an ID number, output "NONE".
+        """
+        body = json.dumps({
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 50,
+            "messages": [{"role": "user", "content": prompt_context}]
+        })
+        try:
+            logger.info("Invoking Bedrock for ID extraction...")
+            response = self.bedrock_runtime.invoke_model(
+                body=body,
+                modelId=self.model_id,
+                accept="application/json",
+                contentType="application/json"
+            )
+            response_body = json.loads(response.get("body").read())
+            result_text = response_body.get("content")[0].get("text").strip()
+            if result_text.upper() == "NONE":
+                return None
+            return result_text
+        except Exception as e:
+            logger.error(f"Failed to extract ID using AI: {e}")
+            return None
