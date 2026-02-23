@@ -1,5 +1,9 @@
 import os
 from dataclasses import dataclass
+from dotenv import load_dotenv
+
+# Cargar variables desde el archivo .env si existe
+load_dotenv()
 
 @dataclass
 class Config:
@@ -9,9 +13,10 @@ class Config:
     DB_USER: str = os.getenv("DB_USER", "postgres")
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "password")
     
-    # WhatsApp
-    WHATSAPP_API_TOKEN: str = os.getenv("WHATSAPP_API_TOKEN", "")
-    WHATSAPP_PHONE_ID: str = os.getenv("WHATSAPP_PHONE_ID", "")
+    # Twilio (WhatsApp)
+    TWILIO_ACCOUNT_SID: str = os.getenv("TWILIO_ACCOUNT_SID", "")
+    TWILIO_AUTH_TOKEN: str = os.getenv("TWILIO_AUTH_TOKEN", "")
+    TWILIO_WHATSAPP_NUMBER: str = os.getenv("TWILIO_WHATSAPP_NUMBER", "")
     
     # AWS
     S3_BUCKET_NAME: str = os.getenv("S3_BUCKET_NAME", "")
