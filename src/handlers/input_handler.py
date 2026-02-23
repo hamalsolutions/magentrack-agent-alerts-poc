@@ -10,7 +10,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 dynamodb = boto3.resource('dynamodb')
-TABLE_NAME = os.environ.get('MESSAGES_TABLE')
+TABLE_NAME = os.environ.get('MESSAGES_TABLE','')
 
 def lambda_handler(event, context):
     """
@@ -40,6 +40,10 @@ def lambda_handler(event, context):
             'status': 'RECEIVED',
             'type': 'INCOMING'
         }
+        
+        if not TABLE_NAME:
+            logger.error("TABLE_NAME environment variable is not set")
+            raise ValueError("TABLE_NAME environment variable is not set")
 
         table = dynamodb.Table(TABLE_NAME)
         table.put_item(Item=item)

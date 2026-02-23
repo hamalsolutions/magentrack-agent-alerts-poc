@@ -76,12 +76,44 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref MessagesTable
+      Environment:
+        Variables:
+          MESSAGES_TABLE: !Ref MessagesTable
       Events:
         ApiTrigger:
           Type: Api
           Properties:
             Path: /webhook
             Method: post
+            Auth:
+              ApiKeyRequired: true
+
+  # --------------------------------------------------------------------------
+  # API Gateway Authentication
+  # --------------------------------------------------------------------------
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Sub "${AWS::StackName}-apikey"
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref ServerlessRestApi
+          StageName: Prod
+
+  UsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      ApiStages:
+        - ApiId: !Ref ServerlessRestApi
+          Stage: Prod
+      UsagePlanName: !Sub "${AWS::StackName}-usage-plan"
+
+  UsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref ApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref UsagePlan
 
   # 2. Stream Trigger (DynamoDB Stream)
   StreamTriggerFunction:
@@ -137,3 +169,6 @@ Outputs:
   TableName:
     Description: "DynamoDB Table Name"
     Value: !Ref MessagesTable
+  ApiKeyId:
+    Description: "API Key ID"
+    Value: !Ref ApiKey
