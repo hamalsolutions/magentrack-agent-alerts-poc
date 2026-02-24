@@ -1,5 +1,6 @@
 {
   "message_id": "msg-12345",
   "phone_number": "+1234567890",
-  "message": "Hello, I need help with my appointment"
+  "user_id": "1234567890",
+  "message": "Hola necesito asistencia con mi alerta de glucometría, mi número de identificación es 527480"
 }

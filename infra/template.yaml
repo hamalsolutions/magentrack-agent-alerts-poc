@@ -76,9 +76,17 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref MessagesTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
       Environment:
         Variables:
           MESSAGES_TABLE: !Ref MessagesTable
+          MAGENTRACK_BACKEND_URL: "https://api.magentrack.com"
+          MAGENTRACK_USER: ""
+          MAGENTRACK_PASSWORD: ""
       Events:
         ApiTrigger:
           Type: Api

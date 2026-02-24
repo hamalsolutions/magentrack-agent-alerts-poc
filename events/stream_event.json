@@ -20,7 +20,10 @@
             "S": "+1234567890"
           },
           "message": {
-            "S": "Hello, I need help with my appointment"
+            "S": "Hola necesito asistencia con mi alerta de glucometría, mi número de identificación es 527480"
+          },
+          "user_id": {
+            "S": "1234567890"
           },
           "type": {
             "S": "INCOMING"

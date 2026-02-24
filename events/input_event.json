@@ -1,5 +1,5 @@
 {
-  "body": "{\"message\": \"Hello, I need help with my appointment\", \"phone_number\": \"+1234567890\"}",
+  "body": "{\"message\": \"Hola necesito asistencia con mi alerta de glucometría, mi número de identificación es 527480\", \"phone_number\": \"+1234567890\"}",
   "resource": "/webhook",
   "path": "/webhook",
   "httpMethod": "POST",
