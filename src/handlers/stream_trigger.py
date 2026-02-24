@@ -22,7 +22,6 @@ def lambda_handler(event, context):
             new_image = record['dynamodb']['NewImage']
             
             # Simple deserialization (for robust usage, use TypeDeserializer)
-            user_id = new_image.get('user_id', {}).get('S', None)
             message_id = new_image['message_id']['S']
             phone_number = new_image['phone_number']['S']
             message_text = new_image['message']['S']
@@ -35,7 +34,6 @@ def lambda_handler(event, context):
             logger.info(f"Triggering workflow for message: {message_id}")
             
             input_data = {
-                'user_id': user_id,
                 'message_id': message_id,
                 'phone_number': phone_number,
                 'message': message_text
