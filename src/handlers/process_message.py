@@ -53,7 +53,7 @@ def get_magentrack_token():
         return None
 
 
-def fetch_patient_user_id(id_number, retry=True) -> int | None:
+def fetch_patient_user_info(id_number, retry=True) -> dict | None:
     try:
         url = f"{MAGENTRACK_BACKEND_URL}/Paciente/GetPaginationPacientes?$inlinecount=0&$skip=0&$top=20&$search={urllib.parse.quote(id_number)}"
 
@@ -70,7 +70,12 @@ def fetch_patient_user_id(id_number, retry=True) -> int | None:
             )
             if items and len(items) > 0:
                 first_item = items[0]
-                return first_item.get("PatientId")
+                return {
+                    "PatientId": first_item.get("PatientId"),
+                    "Genero": first_item.get("Genero"),
+                    "Edad": first_item.get("Edad"),
+                    "EstaEnEmbarazo": first_item.get("EstaEnEmbarazo"),
+                }
     except urllib.error.HTTPError as e:
         if e.code == 401 and retry:
             logger.warning(
@@ -78,11 +83,11 @@ def fetch_patient_user_id(id_number, retry=True) -> int | None:
             )
             global cached_token
             cached_token = None
-            return fetch_patient_user_id(id_number, retry=False)
+            return fetch_patient_user_info(id_number, retry=False)
         else:
-            logger.error(f"HTTPError fetching patient user ID for {id_number}: {e}")
+            logger.error(f"HTTPError fetching patient user info for {id_number}: {e}")
     except Exception as e:
-        logger.error(f"Failed to fetch patient user ID for {id_number}: {e}")
+        logger.error(f"Failed to fetch patient user info for {id_number}: {e}")
     return None
 
 
@@ -106,7 +111,11 @@ def fetch_alerts(user_id: int, endpoint: str, retry: bool = True):
         with urllib.request.urlopen(req, timeout=10) as response:
             data = json.loads(response.read().decode("utf-8"))
             # 0	Abierto, 1 En seguimiento, 2 Cerrado, 3 Expirado, 4 No gestionado
-            data = [item for item in data if item.get("Estado") == 0]
+            data = [
+                item
+                for item in data
+                if item.get("Estado") == 0 or item.get("Estado") == 1
+            ]
             return data
     except urllib.error.HTTPError as e:
         if e.code == 401 and retry:
@@ -139,11 +148,14 @@ def lambda_handler(event, context):
     logger.info(f"Extracted ID number: {id_number}")
 
     user_id = None
+    user_info = None
     alerts = {}
 
     if id_number:
-        user_id = fetch_patient_user_id(id_number)
-        logger.info(f"Fetched User ID from API: {user_id}")
+        user_info = fetch_patient_user_info(id_number)
+        if user_info:
+            user_id = user_info.get("PatientId")
+            logger.info(f"Fetched User ID from API: {user_id}")
 
     if user_id:
         bascula = fetch_alerts(user_id, "/Paciente/GetAlertasBascula")
@@ -161,6 +173,7 @@ def lambda_handler(event, context):
     # Enrich the event with new data
     event["id_number"] = id_number
     event["user_id"] = user_id
+    event["user_info"] = user_info
     event["alerts"] = alerts
 
     return event

@@ -1,0 +1,19 @@
+{
+  "status": "success",
+  "response": "Hello, thank you for reaching out. Based on your glucose level of 160, please follow the guidelines.",
+  "original_message_id": "msg-12345",
+  "user_id": 1552675,
+  "alerts": {
+    "glucometro": [
+      {
+        "NivelGlucosa": 160,
+        "AlertaGlucometroAlertaId": 18140,
+        "Latitud": 4.6097,
+        "Longitud": -74.0817
+      }
+    ],
+    "bascula": [],
+    "oximetro": [],
+    "tensiometro": []
+  }
+}
