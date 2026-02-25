@@ -76,17 +76,9 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref MessagesTable
-        - Statement:
-            - Effect: Allow
-              Action:
-                - bedrock:InvokeModel
-              Resource: "*"
       Environment:
         Variables:
           MESSAGES_TABLE: !Ref MessagesTable
-          MAGENTRACK_BACKEND_URL: "https://api.magentrack.com"
-          MAGENTRACK_USER: ""
-          MAGENTRACK_PASSWORD: ""
       Events:
         ApiTrigger:
           Type: Api
@@ -149,6 +141,17 @@ Resources:
     Properties:
       CodeUri: ../
       Handler: src.handlers.process_message.lambda_handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
+      Environment:
+        Variables:
+          MAGENTRACK_BACKEND_URL: "https://api.magentrack.com"
+          MAGENTRACK_USER: ""
+          MAGENTRACK_PASSWORD: ""
 
   # 4. Generate Response (Step Function Step 2)
   GenerateResponseFunction:
