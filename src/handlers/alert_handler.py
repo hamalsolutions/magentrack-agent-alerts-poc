@@ -165,29 +165,3 @@ def lambda_handler(event, context):
         update_dynamodb_status(message_id, "CLOSED")
 
     return {"status": "success", "message": "Alerts handled successfully"}
-
-
-if __name__ == "__main__":
-    # Test the lambda locally
-    import os
-
-    # Load environment variables from .env if desired, or set dummy ones
-    # os.environ["MAGENTRACK_BACKEND_URL"] = "https://api.magentrack.com"
-    # os.environ["MAGENTRACK_USER"] = "test@example.com"
-    # os.environ["MAGENTRACK_PASSWORD"] = "password"
-
-    event_file = os.path.join(
-        os.path.dirname(__file__), "../../events/alert_event.json"
-    )
-    try:
-        with open(event_file, "r") as f:
-            test_event = json.load(f)
-
-        print("Running alert_handler locally with event from", event_file)
-        result = lambda_handler(test_event, None)
-        print("Result:", json.dumps(result, indent=2))
-
-    except FileNotFoundError:
-        print(f"Test event file not found: {event_file}")
-    except Exception as e:
-        print(f"Error running lambda locally: {e}")

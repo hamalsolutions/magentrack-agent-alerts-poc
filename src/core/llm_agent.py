@@ -46,6 +46,16 @@ class LLMAgent:
         - Responde en el idioma apropiado para el contexto.
         """
 
+        conversation_history = alert.get("conversation_history", [])
+        if conversation_history:
+            history_text = "\n".join(
+                [
+                    f"[{msg['role']}] ({msg['timestamp']}): {msg['content']}"
+                    for msg in conversation_history
+                ]
+            )
+            prompt_context += f"\nHISTORIAL DE CONVERSACION RECIENTE:\n{history_text}\n"
+
         self.prompt = prompt_context
 
         body = json.dumps(
