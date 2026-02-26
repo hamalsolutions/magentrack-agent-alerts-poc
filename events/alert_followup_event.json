@@ -1,7 +1,8 @@
 {
   "status": "success",
-  "original_message_id": "msg-12345",
+  "original_message_id": "msg-67890",
   "user_id": 1552675,
+  "follow_up": true,
   "alerts": {
     "glucometro": [
       {
@@ -36,7 +37,6 @@
     "oximetro": [],
     "tensiometro": []
   },
-  "follow_up": false,
   "conversation_history": [
     {
       "role": "user",
@@ -45,8 +45,18 @@
     },
     {
       "role": "assistant",
-      "content": "Su alerta de glucometria muestra valores por encima de lo normal, por favor acuda a urgencias lo mas pronto posible.",
+      "content": "Por favor espere 1 hora, tome de nuevo la medida de glucosa y me informa el resultado para hacer seguimiento.",
       "timestamp": "2023-10-27T10:01:00Z"
+    },
+    {
+      "role": "user",
+      "content": "Ya pasó la hora, me acabo de medir y mi glucosa está en 110.",
+      "timestamp": "2023-10-27T11:00:00Z"
+    },
+    {
+      "role": "assistant",
+      "content": "Perfecto, me alegra saber que su glucosa ya bajó a 110. Siga cuidándose y comuníquese si presenta alguna anomalía.",
+      "timestamp": "2023-10-27T11:01:00Z"
     }
   ]
 }

@@ -53,7 +53,7 @@ def lambda_handler(event, context):
     alerts = event.get("alerts") or {}
     user_id = event.get("user_id")
     id_number = event.get("id_number")
-    conversation_history = event.get("conversation_history") or []
+    conversation_history = event.get("conversation_history", [])
 
     try:
         s3 = S3Adapter()
@@ -91,6 +91,11 @@ def lambda_handler(event, context):
 
         response_text = agent.generate_response(context_data, guidance)
 
+        event["conversation_history"].append(
+            {"role": "assistant", "content": response_text}
+        )
+
+        # TODO: move this to database adapter
         table = dynamodb.Table(TABLE_NAME)
 
         response_item = {
@@ -112,13 +117,12 @@ def lambda_handler(event, context):
         table.put_item(Item=response_item)
         logger.info(f"Response stored for {message_id}")
 
-        return {
-            "status": "success",
-            "response": response_text,
-            "original_message_id": message_id,
-            "user_id": event.get("user_id"),
-            "alerts": alerts,
-        }
+        event["status"] = "GENERATED"
+        event["type"] = "OUTGOING"
+        event["response"] = response_text
+        event["original_message_id"] = message_id
+
+        return event
 
     except Exception as e:
         logger.error(f"Error generating response: {e}")

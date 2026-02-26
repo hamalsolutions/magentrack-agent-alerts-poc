@@ -157,9 +157,11 @@ def lambda_handler(event, context):
     user_info = None
     alerts = {}
     conversation_history = []
+    follow_up = False
 
     if id_number:
         user_info = fetch_patient_user_info(id_number)
+        conversation_history.append({"role": "user", "content": message_text})
         if user_info:
             user_id = user_info.get("PatientId")
             logger.info(f"Fetched User ID from API: {user_id}")
@@ -167,6 +169,7 @@ def lambda_handler(event, context):
         logger.info(
             f"No ID number found. Treating as follow-up for phone {phone_number}."
         )
+        follow_up = True
         if MESSAGES_TABLE_NAME and phone_number:
             try:
                 table = dynamodb.Table(MESSAGES_TABLE_NAME)
@@ -225,6 +228,7 @@ def lambda_handler(event, context):
     event["user_id"] = user_id
     event["user_info"] = user_info
     event["alerts"] = alerts
+    event["follow_up"] = follow_up
     event["conversation_history"] = conversation_history
 
     return event
