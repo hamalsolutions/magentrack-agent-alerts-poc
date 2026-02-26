@@ -1,5 +1,45 @@
 {
   "message_id": "msg-12345",
   "phone_number": "+1234567890",
-  "message": "Hola necesito asistencia con mi alerta de glucometría, mi número de identificación es 527480"
+  "message": "Hola necesito asistencia con mi alerta de glucometría, mi número de identificación es 527480",
+  "user_info": {
+    "PatientId": 1552675,
+    "Genero": 0,
+    "Edad": 36,
+    "EstaEnEmbarazo": null
+  },
+  "alerts": {
+    "glucometro": [
+      {
+        "NotasAlertasGlucometro": [
+          {
+            "AlertaGlucometroAlertaId": 18140,
+            "NotaId": 7565,
+            "Descripcion": "prueba",
+            "PacienteId": 1552675,
+            "Estado": 2,
+            "NombreUsuario": "JOFFER HOMEZ",
+            "FechaCreacion": "2026-02-05T16:13:06.038192-05:00",
+            "IndiceNota": 1
+          }
+        ],
+        "FechaMedicion": "2026-02-05T16:01:31-05:00",
+        "CantidadNotas": 1,
+        "NivelGlucosa": 160,
+        "Limite": 0,
+        "GlucometroMedicionId": 197254,
+        "AlertaId": 18140,
+        "NombreAlerta": "Hiperglicemia",
+        "FechaAlerta": "2026-02-05T16:01:44.533724-05:00",
+        "PacienteId": 1552675,
+        "Estado": 0,
+        "Prioridad": 1,
+        "NotaMedicion": "prueba pacientes: 05/02/2026",
+        "TipoMedicion": 1
+      }
+    ],
+    "bascula": [],
+    "oximetro": [],
+    "tensiometro": []
+  }
 }

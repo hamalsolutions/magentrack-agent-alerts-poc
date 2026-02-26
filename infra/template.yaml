@@ -56,12 +56,18 @@ Resources:
           GenerateResponse:
             Type: Task
             Resource: !GetAtt GenerateResponseFunction.Arn
+            Next: AlertHandler
+          AlertHandler:
+            Type: Task
+            Resource: !GetAtt AlertHandlerFunction.Arn
             End: True
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref ProcessMessageFunction
         - LambdaInvokePolicy:
             FunctionName: !Ref GenerateResponseFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref AlertHandlerFunction
 
   # --------------------------------------------------------------------------
   # Lambda Functions
@@ -169,6 +175,22 @@ Resources:
               Action:
                 - bedrock:InvokeModel
               Resource: "*"
+
+  # 5. Alert Handler (Step Function Step 3)
+  AlertHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../
+      Handler: src.handlers.alert_handler.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MessagesTable
+      Environment:
+        Variables:
+          MESSAGES_TABLE: !Ref MessagesTable
+          MAGENTRACK_BACKEND_URL: "https://api.magentrack.com"
+          MAGENTRACK_USER: ""
+          MAGENTRACK_PASSWORD: ""
 
 Outputs:
   ApiUrl:

@@ -6,11 +6,12 @@ from src.core.config import config
 
 logger = logging.getLogger(__name__)
 
+
 class LLMAgent:
     def __init__(self):
         self.bedrock_runtime = boto3.client(
-            service_name='bedrock-runtime',
-            region_name='us-east-1' # Ideally config
+            service_name="bedrock-runtime",
+            region_name="us-east-1",  # Ideally config
         )
         self.model_id = config.BEDROCK_MODEL_ID
 
@@ -18,34 +19,42 @@ class LLMAgent:
         """
         Generates a natural language response for the patient based on the alert and guidance.
         """
+        user_info = alert.get("user_info", {})
+        alerts_summary = alert.get("alerts_summary", [])
+
         prompt_context = f"""
-        You are a helpful medical assistant chatbot for a clinic.
+        Eres un asistente medico de una clinica.
         
-        GUIDANCE FOR THIS ALERT TYPE:
+        GUIA PARA ESTE TIPO DE ALERTA:
         {guidance}
         
-        PATIENT ALERT DATA:
-        Patient: {alert.get('patient_name')}
-        Type: {alert.get('alert_type')}
-        Value: {alert.get('value')}
-        Time: {alert.get('timestamp')}
+        DATOS DE LA ALERTA DEL PACIENTE:
+        Consulta: {alert.get("value")}
+        Fecha: {alert.get("timestamp")}
         
-        INSTRUCTIONS:
-        - Draft a short, empathetic, and clear WhatsApp message to the patient.
-        - Do not include subject lines or placeholders.
-        - Respond in the language appropriate for the context (Spanish/English mixed contexts often imply Spanish, but I will default to Spanish as per the architecture diagram 'Seguimiento' labels).
+        INFORMACION DEL PACIENTE:
+        Genero: {user_info.get("Genero")}
+        Edad: {user_info.get("Edad")}
+        EstaEnEmbarazo: {user_info.get("EstaEnEmbarazo")}
+        
+        RESUMEN DE ALERTAS:
+        {json.dumps(alerts_summary, indent=2, ensure_ascii=False)}
+        
+        INSTRUCCIONES:
+        - Redacta un mensaje corto, empatico y claro para el paciente.
+        - No incluyas lineas de asunto ni placeholders.
+        - Responde en el idioma apropiado para el contexto.
         """
 
-        body = json.dumps({
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 300,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt_context
-                }
-            ]
-        })
+        self.prompt = prompt_context
+
+        body = json.dumps(
+            {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 300,
+                "messages": [{"role": "user", "content": prompt_context}],
+            }
+        )
 
         try:
             logger.info("Invoking Bedrock model...")
@@ -53,13 +62,13 @@ class LLMAgent:
                 body=body,
                 modelId=self.model_id,
                 accept="application/json",
-                contentType="application/json"
+                contentType="application/json",
             )
-            
+
             response_body = json.loads(response.get("body").read())
             result_text = response_body.get("content")[0].get("text")
             return result_text.strip()
-            
+
         except Exception as e:
             logger.error(f"Bedrock invocation failed: {e}")
             # Fallback simple message if LLM fails
@@ -76,18 +85,20 @@ class LLMAgent:
         If you find an ID number, output exactly the number as plain text with no other words or formatting.
         If you do not find an ID number, output "NONE".
         """
-        body = json.dumps({
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 50,
-            "messages": [{"role": "user", "content": prompt_context}]
-        })
+        body = json.dumps(
+            {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 50,
+                "messages": [{"role": "user", "content": prompt_context}],
+            }
+        )
         try:
             logger.info("Invoking Bedrock for ID extraction...")
             response = self.bedrock_runtime.invoke_model(
                 body=body,
                 modelId=self.model_id,
                 accept="application/json",
-                contentType="application/json"
+                contentType="application/json",
             )
             response_body = json.loads(response.get("body").read())
             result_text = response_body.get("content")[0].get("text").strip()
