@@ -4,6 +4,15 @@ Description: >
   Magentrack Agent Alerts POC
   Agentic chatbot processing requests using AWS Bedrock and storing in DynamoDB.
 
+Parameters:
+  MagentrackUser:
+    Type: String
+    Description: "Username for the Magentrack backend API"
+  MagentrackPassword:
+    Type: String
+    NoEcho: true
+    Description: "Password for the Magentrack backend API"
+
 Globals:
   Function:
     Timeout: 60
@@ -172,8 +181,8 @@ Resources:
         Variables:
           MESSAGES_TABLE: !Ref MessagesTable
           MAGENTRACK_BACKEND_URL: "https://api.magentrack.com"
-          MAGENTRACK_USER: ""
-          MAGENTRACK_PASSWORD: ""
+          MAGENTRACK_USER: !Ref MagentrackUser
+          MAGENTRACK_PASSWORD: !Ref MagentrackPassword
 
   # 4. Generate Response (Step Function Step 2)
   GenerateResponseFunction:
@@ -205,8 +214,8 @@ Resources:
         Variables:
           MESSAGES_TABLE: !Ref MessagesTable
           MAGENTRACK_BACKEND_URL: "https://api.magentrack.com"
-          MAGENTRACK_USER: ""
-          MAGENTRACK_PASSWORD: ""
+          MAGENTRACK_USER: !Ref MagentrackUser
+          MAGENTRACK_PASSWORD: !Ref MagentrackPassword
 
 Outputs:
   ApiUrl:
