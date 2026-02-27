@@ -7,6 +7,8 @@ import urllib.request
 import urllib.parse
 import urllib.error
 from src.core.llm_agent import LLMAgent
+import boto3
+from boto3.dynamodb.conditions import Key
 
 # Configure logging
 logger = logging.getLogger()
@@ -19,6 +21,9 @@ MAGENTRACK_BACKEND_URL = os.environ.get(
 )
 MAGENTRACK_USER = os.environ.get("MAGENTRACK_USER", "")
 MAGENTRACK_PASSWORD = os.environ.get("MAGENTRACK_PASSWORD", "")
+
+MESSAGES_TABLE_NAME = os.environ.get("MESSAGES_TABLE")
+dynamodb = boto3.resource("dynamodb")
 
 cached_token = None
 
@@ -142,6 +147,7 @@ def lambda_handler(event, context):
     logger.info("Processing message event: %s", json.dumps(event))
 
     message_text = event.get("message", "")
+    phone_number = event.get("phone_number", "")
 
     # Extract identity
     id_number = llm_agent.extract_id_from_message(message_text)
@@ -150,14 +156,61 @@ def lambda_handler(event, context):
     user_id = None
     user_info = None
     alerts = {}
+    conversation_history = []
+    follow_up = False
 
     if id_number:
         user_info = fetch_patient_user_info(id_number)
+        conversation_history.append({"role": "user", "content": message_text})
         if user_info:
             user_id = user_info.get("PatientId")
             logger.info(f"Fetched User ID from API: {user_id}")
+    else:
+        logger.info(
+            f"No ID number found. Treating as follow-up for phone {phone_number}."
+        )
+        follow_up = True
+        if MESSAGES_TABLE_NAME and phone_number:
+            try:
+                table = dynamodb.Table(MESSAGES_TABLE_NAME)
+                response = table.query(
+                    IndexName="PhoneNumberIndex",
+                    KeyConditionExpression=Key("phone_number").eq(phone_number),
+                    ScanIndexForward=False,  # Get newest first
+                    Limit=6,  # Get the current message + 5 previous
+                )
+                items = response.get("Items", [])
 
-    if user_id:
+                # Try to extract the user_id from previous outgoing messages if present
+                for item in items:
+                    if item.get("type") == "OUTGOING" and item.get("user_id"):
+                        user_id = item.get("user_id")
+                        logger.info(f"Extracted user_id {user_id} from history")
+                        break
+
+                # Exclude the current incoming message itself from history to avoid duplication in context
+                history_items = [
+                    item
+                    for item in items
+                    if item.get("message_id") != event.get("message_id")
+                ]
+
+                conversation_history = [
+                    {
+                        "role": "model" if item.get("type") == "OUTGOING" else "user",
+                        "content": item.get("message"),
+                        "timestamp": item.get("timestamp"),
+                    }
+                    for item in reversed(
+                        history_items[:5]
+                    )  # Reverse back to chronological order (oldest -> newest)
+                ]
+            except Exception as e:
+                logger.error(f"Failed to fetch conversation history: {e}")
+
+    if (
+        user_id and not alerts
+    ):  # Only fetch if we have a user_id and haven't fetched yet
         bascula = fetch_alerts(user_id, "/Paciente/GetAlertasBascula")
         glucometro = fetch_alerts(user_id, "/Paciente/GetAlertasGlucometro")
         oximetro = fetch_alerts(user_id, "/Paciente/GetAlertasOximetro")
@@ -175,5 +228,7 @@ def lambda_handler(event, context):
     event["user_id"] = user_id
     event["user_info"] = user_info
     event["alerts"] = alerts
+    event["follow_up"] = follow_up
+    event["conversation_history"] = conversation_history
 
     return event

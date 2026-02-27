@@ -51,6 +51,9 @@ def lambda_handler(event, context):
     user_message = event.get("message")
     user_info = event.get("user_info") or {}
     alerts = event.get("alerts") or {}
+    user_id = event.get("user_id")
+    id_number = event.get("id_number")
+    conversation_history = event.get("conversation_history", [])
 
     try:
         s3 = S3Adapter()
@@ -70,17 +73,29 @@ def lambda_handler(event, context):
             "timestamp": datetime.utcnow().isoformat(),
             "phone_number": phone_number,
             "user_info": {
-                "Genero": "Masculino" if user_info.get("Genero") == 0 else "Femenino",
+                "Genero": "Masculino"
+                if user_info.get("Genero") == 0
+                else "Femenino"
+                if user_info.get("Genero") is not None
+                else "Desconocido",
                 "Edad": user_info.get("Edad"),
                 "EstaEnEmbarazo": "Si"
                 if user_info.get("EstaEnEmbarazo") == 1
-                else "No",
+                else "No"
+                if user_info.get("EstaEnEmbarazo") is not None
+                else "Desconocido",
             },
             "alerts_summary": mapped_alerts,
+            "conversation_history": conversation_history,
         }
 
         response_text = agent.generate_response(context_data, guidance)
 
+        event["conversation_history"].append(
+            {"role": "assistant", "content": response_text}
+        )
+
+        # TODO: move this to database adapter
         table = dynamodb.Table(TABLE_NAME)
 
         response_item = {
@@ -94,16 +109,20 @@ def lambda_handler(event, context):
             "type": "OUTGOING",
         }
 
+        if user_id:
+            response_item["user_id"] = user_id
+        if id_number:
+            response_item["id_number"] = id_number
+
         table.put_item(Item=response_item)
         logger.info(f"Response stored for {message_id}")
 
-        return {
-            "status": "success",
-            "response": response_text,
-            "original_message_id": message_id,
-            "user_id": event.get("user_id"),
-            "alerts": alerts,
-        }
+        event["status"] = "GENERATED"
+        event["type"] = "OUTGOING"
+        event["response"] = response_text
+        event["original_message_id"] = message_id
+
+        return event
 
     except Exception as e:
         logger.error(f"Error generating response: {e}")

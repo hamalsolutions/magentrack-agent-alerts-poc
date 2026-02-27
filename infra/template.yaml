@@ -27,12 +27,25 @@ Resources:
       AttributeDefinitions:
         - AttributeName: message_id
           AttributeType: S
+        - AttributeName: phone_number
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
       KeySchema:
         - AttributeName: message_id
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
       StreamSpecification:
         StreamViewType: NEW_IMAGE
+      GlobalSecondaryIndexes:
+        - IndexName: PhoneNumberIndex
+          KeySchema:
+            - AttributeName: phone_number
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
 
   # --------------------------------------------------------------------------
   # S3 Bucket
@@ -153,8 +166,11 @@ Resources:
               Action:
                 - bedrock:InvokeModel
               Resource: "*"
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MessagesTable
       Environment:
         Variables:
+          MESSAGES_TABLE: !Ref MessagesTable
           MAGENTRACK_BACKEND_URL: "https://api.magentrack.com"
           MAGENTRACK_USER: ""
           MAGENTRACK_PASSWORD: ""

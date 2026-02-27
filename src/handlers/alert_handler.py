@@ -4,7 +4,10 @@ import os
 import urllib.request
 import urllib.parse
 from datetime import datetime
-import boto3
+
+from src.core.llm_agent import LLMAgent
+from src.connectivity.s3_store import S3Adapter
+from src.connectivity.database import update_dynamodb_status
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -14,9 +17,7 @@ MAGENTRACK_BACKEND_URL = os.environ.get(
 )
 MAGENTRACK_USER = os.environ.get("MAGENTRACK_USER", "")
 MAGENTRACK_PASSWORD = os.environ.get("MAGENTRACK_PASSWORD", "")
-MESSAGES_TABLE = os.environ.get("MESSAGES_TABLE")
 
-dynamodb = boto3.resource("dynamodb")
 cached_token = None
 
 
@@ -49,40 +50,31 @@ def get_magentrack_token():
         return None
 
 
-def update_dynamodb_status(message_id, status):
-    if not MESSAGES_TABLE:
-        return
-    try:
-        table = dynamodb.Table(MESSAGES_TABLE)
-        table.update_item(
-            Key={"message_id": message_id},
-            UpdateExpression="SET #s = :s",
-            ExpressionAttributeNames={"#s": "status"},
-            ExpressionAttributeValues={":s": status},
-        )
-    except Exception as e:
-        logger.error(f"Error updating DynamoDB: {e}")
-
-
 def lambda_handler(event, context):
     """
     Third step in Step Functions flow.
     Evaluates the message and alerts, then decides what state to put the alert in.
     """
     logger.info("Processing alert event: %s", json.dumps(event))
-
-    # message = event.get("response", "")
     message_id = event.get("original_message_id")
     user_id = event.get("user_id", 0)
     alerts = event.get("alerts", {})
+    conversation_history = event.get("conversation_history", [])
 
-    # TODO: The description needs to be defined based on the context (seguimiento, seguimiento 2 o Cerrado)
-    description = "Cerrado"
+    s3 = S3Adapter()
+    guidance = s3.get_guidance_document("alert_handling_guidelines.txt")
 
-    # TODO: Make an evaluation to decide what state to put an alert.
-    # For now, put 2 as the state but leave a note to change it later on
-    # based on the conversation context.
-    estado = 2
+    agent = LLMAgent()
+
+    decision = agent.evaluate_alert_state(
+        alert_context={"alerts": alerts},
+        conversation_history=conversation_history,
+        guidance=guidance,
+    )
+    logger.info(f"Decision: {decision}")
+
+    estado = decision.get("estado", 2)
+    description = str(decision.get("descripcion", "Cerrado"))
 
     token = get_magentrack_token()
 
@@ -146,6 +138,7 @@ def lambda_handler(event, context):
                     headers["Authorization"] = f"Bearer {token}"
 
                 try:
+                    ## TODO: THIS IS RETURNING 400 REVIEW THE BODY
                     req = urllib.request.Request(
                         url,
                         method="POST",
@@ -165,29 +158,3 @@ def lambda_handler(event, context):
         update_dynamodb_status(message_id, "CLOSED")
 
     return {"status": "success", "message": "Alerts handled successfully"}
-
-
-if __name__ == "__main__":
-    # Test the lambda locally
-    import os
-
-    # Load environment variables from .env if desired, or set dummy ones
-    # os.environ["MAGENTRACK_BACKEND_URL"] = "https://api.magentrack.com"
-    # os.environ["MAGENTRACK_USER"] = "test@example.com"
-    # os.environ["MAGENTRACK_PASSWORD"] = "password"
-
-    event_file = os.path.join(
-        os.path.dirname(__file__), "../../events/alert_event.json"
-    )
-    try:
-        with open(event_file, "r") as f:
-            test_event = json.load(f)
-
-        print("Running alert_handler locally with event from", event_file)
-        result = lambda_handler(test_event, None)
-        print("Result:", json.dumps(result, indent=2))
-
-    except FileNotFoundError:
-        print(f"Test event file not found: {event_file}")
-    except Exception as e:
-        print(f"Error running lambda locally: {e}")
